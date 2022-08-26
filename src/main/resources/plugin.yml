@@ -1,0 +1,8 @@
+name: FileUpload
+version: '${project.version}'
+main: me.mrscopes.fileupload.FileUpload
+api-version: 1.19
+commands:
+  upload:
+    description: upload file
+    usage: /upload <file>
