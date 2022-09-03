@@ -10,20 +10,36 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-/**
- * This utility compresses a list of files to standard ZIP format file.
- * It is able to compress all sub files and sub directories, recursively.
- * @author www.codejava.net
- *
- */
+
 public class Utilities {
+    public static String uploadFile(File file) throws IOException {
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpPost httpPost = new HttpPost("https://file.io/");
+
+        FileBody uploadFilePart = new FileBody(file);
+        MultipartEntity reqEntity = new MultipartEntity();
+        reqEntity.addPart("file", uploadFilePart);
+        httpPost.setEntity(reqEntity);
+
+        HttpResponse response = httpclient.execute(httpPost);
+        return new Gson().fromJson(EntityUtils.toString(response.getEntity()), fileIOResponse.class).link;
+    }
+
+    private static class fileIOResponse {
+        public String link;
+    }
+
+    /**
+     * This utility compresses a list of files to standard ZIP format file.
+     * It is able to compress all sub files and sub directories, recursively.
+     * @author www.codejava.net
+     *
+     */
+
     /**
      * A constants for buffer size used to read/write data
      */
@@ -73,13 +89,13 @@ public class Utilities {
     private void zipDirectory(File folder, String parentFolder,
                               ZipOutputStream zos) throws FileNotFoundException, IOException {
         for (File file : folder.listFiles()) {
+            if (file.getName().equals("FileUpload") && file.isDirectory()) continue;
             if (file.isDirectory()) {
                 zipDirectory(file, parentFolder + "/" + file.getName(), zos);
                 continue;
             }
             zos.putNextEntry(new ZipEntry(parentFolder + "/" + file.getName()));
-            BufferedInputStream bis = new BufferedInputStream(
-                    new FileInputStream(file));
+            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
             long bytesRead = 0;
             byte[] bytesIn = new byte[BUFFER_SIZE];
             int read = 0;
@@ -110,35 +126,5 @@ public class Utilities {
             bytesRead += read;
         }
         zos.closeEntry();
-    }
-
-    public static void copyDirectory(String sourceDirectoryLocation, String destinationDirectoryLocation) throws IOException {
-        Files.walk(Paths.get(sourceDirectoryLocation))
-                .forEach(source -> {
-                    Path destination = Paths.get(destinationDirectoryLocation, source.toString()
-                            .substring(sourceDirectoryLocation.length()));
-                    try {
-                        Files.copy(source, destination);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
-    }
-
-    public static String uploadFile(File file) throws IOException {
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost("https://file.io/");
-
-        FileBody uploadFilePart = new FileBody(file);
-        MultipartEntity reqEntity = new MultipartEntity();
-        reqEntity.addPart("file", uploadFilePart);
-        httpPost.setEntity(reqEntity);
-
-        HttpResponse response = httpclient.execute(httpPost);
-        return new Gson().fromJson(EntityUtils.toString(response.getEntity()), fileIOResponse.class).link;
-    }
-
-    private static class fileIOResponse {
-        public String link;
     }
 }

@@ -1,8 +1,10 @@
 package me.mrscopes.fileupload;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,43 +27,26 @@ public class UploadCommand implements TabExecutor {
         }
 
         if (file.isDirectory()) {
-            sender.sendMessage("only works with single files currently.");
-            return true;
-            /* not yet working
-            int length = file.listFiles().length;
-
-            sender.sendMessage(String.format("Zipping '%s' folder.", file.getName(), length));
-
-            File targetFile = new File(String.format("plugins/FileUpload/%s.zip", file.getName() ));
-            String[] files = { String.valueOf(targetFile) };
+            if (System.getProperty("os.name").contains("Windows")) sender.sendMessage("Note: On windows, some files in use may be locked and it will result in them not being transferred. This is usually a world folder for example.");
 
             try {
-                sender.sendMessage(String.format("Copying '%s' folder.", file.getName(), length));
-                File copiedFile = new File(String.format("plugins/FileUpload/copy-%s", file.getName()));
-                Utilities.copyDirectory(file.getAbsolutePath(), copiedFile.getAbsolutePath());
-                sender.sendMessage("Copied.");
+                sender.sendMessage(String.format("Zipping '%s' folder.", file.getName()));
+                File targetFile = new File(String.format("%s/%s.zip", FileUpload.getInstance().getDataFolder().getPath(), file.getName()));
+                new Utilities().zip(new String[] { file.getPath() }, targetFile.getPath());
 
-                sender.sendMessage(String.format("Zipping '%s' folder.", file.getName(), length));
-                new Utilities().zip(new String[] { copiedFile.getPath() }, targetFile.getPath());
-                //copiedFile.delete();
+                sender.sendMessage(String.format("Uploading '%s' folder.", file.getName()));
 
-                sender.sendMessage("Zipped.");
-                sender.sendMessage(String.format("Uploading '%s' folder.", file.getName(), length));
-                // upload targetFile
-                sender.sendMessage("Uploaded.");
+                sender.sendMessage(Utilities.uploadFile(targetFile));
+                targetFile.delete();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            */
-
         }
 
         else {
             sender.sendMessage(String.format("Uploading file '%s'.", file.getName()));
-            File target = new File("plugins/FileUpload/" + file.getName());
             try {
-                Files.copy(file.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                sender.sendMessage(Utilities.uploadFile(target));
+                sender.sendMessage(Utilities.uploadFile(file));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
